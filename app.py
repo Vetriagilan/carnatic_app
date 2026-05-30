@@ -1,7 +1,5 @@
 from flask import Flask, request, jsonify, render_template
 import os
-os.environ["NUMBA_NUM_THREADS"] = "1"
-os.environ["NUMBA_CACHE_DIR"] = "/tmp/numba_cache"
 import librosa
 import numpy as np
 import joblib
@@ -79,5 +77,4 @@ def predict():
 
 # RENDER PORT BINDING FIX
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=7860)
