@@ -4,22 +4,20 @@ import librosa
 import numpy as np
 import joblib
 from werkzeug.utils import secure_filename
+import gc # Added for memory management
 
 app = Flask(__name__)
 
 # Load your pre-trained model and scaler
-svm_model = joblib.load('carnatic_svm_model.pkl')
-scaler = joblib.load('carnatic_scaler.pkl')
+svm_model = joblib.load('svm_model.pkl')
+scaler = joblib.load('scaler.pkl')
 
-# Create a temporary folder for uploaded audio
 os.makedirs("temp_audio", exist_ok=True)
 
-# ---------------------------------------------------------
-# Your Exact Feature Extraction Function
-# ---------------------------------------------------------
 def extract_carnatic_features(file_path):
     try:
-        y, sr = librosa.load(file_path, duration=30)
+        # OPTIMIZATION: sr=16000 slashes memory usage in half for Render's free tier
+        y, sr = librosa.load(file_path, sr=16000, duration=30)
         
         mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=20)
         mfccs_mean = np.mean(mfccs.T, axis=0)
@@ -30,17 +28,17 @@ def extract_carnatic_features(file_path):
         contrast = librosa.feature.spectral_contrast(y=y, sr=sr)
         contrast_mean = np.mean(contrast.T, axis=0)
         
+        # Explicitly free up memory immediately
+        del y
+        gc.collect()
+        
         return np.hstack([mfccs_mean, chroma_mean, contrast_mean])
     except Exception as e:
         print(f"Error processing {file_path}: {e}")
         return None
 
-# ---------------------------------------------------------
-# API Routes
-# ---------------------------------------------------------
 @app.route('/')
 def home():
-    # Serves your beautiful HTML UI
     return render_template('index.html')
 
 @app.route('/predict', methods=['POST'])
@@ -52,36 +50,32 @@ def predict():
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
         
-    # Save the file temporarily
     filename = secure_filename(file.filename)
     filepath = os.path.join("temp_audio", filename)
     file.save(filepath)
     
-    # Extract features
     features = extract_carnatic_features(filepath)
     if features is None:
         os.remove(filepath)
         return jsonify({'error': 'Failed to extract features from audio'}), 500
         
-    # Predict
     features_scaled = scaler.transform(features.reshape(1, -1))
     probs = svm_model.predict_proba(features_scaled)[0]
     
-    # Map probabilities to class names (formatting them to lowercase for the JS to read)
     classes = svm_model.classes_ 
     prob_dict = {cls.lower(): float(prob) for cls, prob in zip(classes, probs)}
     
     predicted_idx = np.argmax(probs)
     predicted_emotion = classes[predicted_idx].lower()
     
-    # Cleanup temp file
     os.remove(filepath)
     
-    # Send data back to the HTML UI
     return jsonify({
         'emotion': predicted_emotion,
         'probs': prob_dict
     })
 
+# RENDER PORT BINDING FIX
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
