@@ -1,5 +1,7 @@
 from flask import Flask, request, jsonify, render_template
 import os
+os.environ["NUMBA_NUM_THREADS"] = "1"
+os.environ["NUMBA_CACHE_DIR"] = "/tmp/numba_cache"
 import librosa
 import numpy as np
 import joblib
