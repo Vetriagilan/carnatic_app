@@ -9,8 +9,8 @@ import gc # Added for memory management
 app = Flask(__name__)
 
 # Load your pre-trained model and scaler
-svm_model = joblib.load('svm_model.pkl')
-scaler = joblib.load('scaler.pkl')
+svm_model = joblib.load('carnatic_svm_model.pkl')
+scaler = joblib.load('carnatic_scaler.pkl')
 
 os.makedirs("temp_audio", exist_ok=True)
 
