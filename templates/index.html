@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carnatic Music Emotion Recognition</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&family=Noto+Serif+Tamil:wght@400;600&family=Noto+Sans+Tamil:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #C8972A;
+    --gold-light: #F0D080;
+    --gold-pale: #FBF4E3;
+    --ink: #1A1612;
+    --ink-soft: #3D3730;
+    --ink-muted: #7A7268;
+    --cream: #FDFAF4;
+    --cream-dark: #F4EFE3;
+    --border: rgba(200,151,42,0.18);
+    --border-strong: rgba(200,151,42,0.38);
+    --success: #2E7D52;
+    --happy: #D4831A;
+    --sad: #3A5FA8;
+    --relax: #2E7D52;
+    --angry: #B83232;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  body.lang-ta {
+    font-family: 'Noto Sans Tamil', 'DM Sans', sans-serif;
+  }
+
+  .serif { font-family: 'Playfair Display', serif; }
+  body.lang-ta .serif { font-family: 'Noto Serif Tamil', 'Playfair Display', serif; }
+
+  /* LANGUAGE SWITCHER */
+  .lang-bar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    background: var(--ink);
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0;
+    padding: 0 2.5rem;
+    height: 44px;
+    border-bottom: 1px solid rgba(200,151,42,0.3);
+  }
+
+  .lang-note {
+    color: rgba(255,255,255,0.35);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    margin-right: auto;
+    text-transform: uppercase;
+  }
+
+  .lang-btn {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.45);
+    font-family: inherit;
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    padding: 0 1.1rem;
+    height: 44px;
+    transition: color 0.2s;
+    position: relative;
+  }
+
+  .lang-btn::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 0; height: 2px;
+    background: var(--gold);
+    transition: width 0.2s;
+  }
+
+  .lang-btn.active {
+    color: var(--gold-light);
+  }
+  .lang-btn.active::after { width: 60%; }
+  .lang-btn:hover { color: rgba(255,255,255,0.8); }
+
+  /* HERO */
+  .hero {
+    margin-top: 44px;
+    padding: 6rem 2.5rem 4rem;
+    background: var(--ink);
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+  }
+
+  .hero-pattern {
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(circle at 15% 40%, rgba(200,151,42,0.08) 0%, transparent 50%),
+      radial-gradient(circle at 85% 60%, rgba(200,151,42,0.06) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  .hero-ornament {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .ornament-line {
+    flex: 1;
+    max-width: 80px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-light));
+  }
+  .ornament-line.right { background: linear-gradient(90deg, var(--gold-light), transparent); }
+
+  .ornament-dot {
+    width: 6px; height: 6px;
+    background: var(--gold);
+    border-radius: 50%;
+  }
+
+  .hero-tag {
+    display: inline-block;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gold);
+    border: 1px solid rgba(200,151,42,0.4);
+    padding: 5px 16px;
+    border-radius: 2px;
+    margin-bottom: 1.8rem;
+  }
+
+  .hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    font-weight: 600;
+    color: #fff;
+    line-height: 1.25;
+    margin-bottom: 0.6rem;
+    letter-spacing: -0.01em;
+  }
+
+  body.lang-ta .hero h1 {
+    font-family: 'Noto Serif Tamil', serif;
+    font-size: clamp(1.6rem, 3.5vw, 2.6rem);
+  }
+
+  .hero h1 em {
+    font-style: italic;
+    color: var(--gold-light);
+  }
+
+  .hero-sub {
+    font-size: 15px;
+    color: rgba(255,255,255,0.5);
+    max-width: 560px;
+    margin: 1rem auto 2.5rem;
+    font-weight: 300;
+  }
+
+  .hero-meta {
+    display: flex;
+    justify-content: center;
+    gap: 2.5rem;
+    flex-wrap: wrap;
+  }
+
+  .hero-meta-item {
+    text-align: center;
+  }
+
+  .hero-meta-value {
+    font-size: 1.6rem;
+    font-weight: 500;
+    color: var(--gold-light);
+    font-family: 'Playfair Display', serif;
+    display: block;
+  }
+
+  .hero-meta-label {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+  }
+
+  /* NAV */
+  .page-nav {
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 44px;
+    z-index: 90;
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    overflow-x: auto;
+  }
+
+  .nav-item {
+    display: block;
+    padding: 1rem 1.5rem;
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .nav-item:hover { color: var(--ink); border-bottom-color: var(--border-strong); }
+
+  /* SECTIONS */
+  .section {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 5rem 2.5rem;
+  }
+
+  .section + .section {
+    border-top: 1px solid var(--border);
+  }
+
+  .section-header {
+    margin-bottom: 3rem;
+  }
+
+  .section-tag {
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gold);
+    display: block;
+    margin-bottom: 0.7rem;
+  }
+
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.2;
+  }
+
+  body.lang-ta .section-title {
+    font-family: 'Noto Serif Tamil', serif;
+    font-size: 1.7rem;
+  }
+
+  .section-desc {
+    margin-top: 0.8rem;
+    color: var(--ink-muted);
+    max-width: 600px;
+    font-size: 15px;
+  }
+
+  /* ABSTRACT CARD */
+  .abstract-card {
+    background: var(--ink);
+    color: rgba(255,255,255,0.85);
+    border-radius: 4px;
+    padding: 2.5rem 3rem;
+    position: relative;
+    overflow: hidden;
+    border-left: 3px solid var(--gold);
+  }
+
+  .abstract-card::before {
+    content: '\201C';
+    font-family: 'Playfair Display', serif;
+    font-size: 8rem;
+    color: rgba(200,151,42,0.12);
+    position: absolute;
+    top: -1rem;
+    left: 1.5rem;
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  .abstract-card p {
+    font-size: 15px;
+    line-height: 1.9;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* FEATURE PIPELINE */
+  .pipeline-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .pipeline-step {
+    background: #fff;
+    padding: 2rem 1.5rem;
+    transition: background 0.2s;
+  }
+  .pipeline-step:hover { background: var(--gold-pale); }
+
+  .step-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.2rem;
+    color: rgba(200,151,42,0.2);
+    font-weight: 600;
+    line-height: 1;
+    margin-bottom: 0.8rem;
+  }
+
+  .step-name {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: var(--ink);
+    margin-bottom: 0.4rem;
+  }
+
+  .step-detail {
+    font-size: 12.5px;
+    color: var(--ink-muted);
+    line-height: 1.6;
+  }
+
+  .step-badge {
+    display: inline-block;
+    margin-top: 0.8rem;
+    padding: 3px 10px;
+    background: var(--gold-pale);
+    border: 1px solid var(--border-strong);
+    border-radius: 2px;
+    font-size: 11.5px;
+    color: var(--gold);
+    font-weight: 500;
+    letter-spacing: 0.05em;
+  }
+
+  /* RESULTS */
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .model-card {
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .model-header {
+    background: var(--ink);
+    color: #fff;
+    padding: 1.2rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .model-name {
+    font-weight: 500;
+    font-size: 15px;
+    letter-spacing: 0.03em;
+  }
+
+  .model-type {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.4);
+  }
+
+  .model-body {
+    padding: 1.5rem;
+    background: #fff;
+  }
+
+  .accuracy-display {
+    margin-bottom: 1.2rem;
+  }
+
+  .accuracy-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-muted);
+    display: block;
+    margin-bottom: 0.3rem;
+  }
+
+  .accuracy-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.8rem;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1;
+  }
+
+  .accuracy-value span {
+    font-size: 1.2rem;
+    color: var(--ink-muted);
+  }
+
+  .accuracy-bar-wrap {
+    height: 4px;
+    background: var(--cream-dark);
+    border-radius: 2px;
+    margin-top: 0.8rem;
+    overflow: hidden;
+  }
+
+  .accuracy-bar {
+    height: 100%;
+    background: var(--gold);
+    border-radius: 2px;
+    transition: width 1.2s cubic-bezier(0.25, 1, 0.5, 1);
+  }
+
+  .model-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .stat-row:last-child { border: none; }
+  .stat-key { color: var(--ink-muted); }
+  .stat-val { font-weight: 500; color: var(--ink); }
+
+  /* EMOTIONS */
+  .emotions-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+  }
+
+  .emotion-card {
+    border-radius: 4px;
+    padding: 1.8rem 1.2rem;
+    text-align: center;
+    border: 1px solid;
+    transition: transform 0.2s;
+  }
+  .emotion-card:hover { transform: translateY(-3px); }
+
+  .emotion-card.happy { background: rgba(212,131,26,0.06); border-color: rgba(212,131,26,0.25); }
+  .emotion-card.sad   { background: rgba(58,95,168,0.06);  border-color: rgba(58,95,168,0.25); }
+  .emotion-card.relax { background: rgba(46,125,82,0.06);  border-color: rgba(46,125,82,0.25); }
+  .emotion-card.angry { background: rgba(184,50,50,0.06);  border-color: rgba(184,50,50,0.25); }
+
+  .emotion-icon {
+    font-size: 2rem;
+    margin-bottom: 0.6rem;
+    display: block;
+  }
+
+  .emotion-name-en { font-weight: 500; font-size: 14px; color: var(--ink); }
+  .emotion-name-ta { font-size: 13px; color: var(--ink-muted); margin-top: 2px; }
+
+  .emotion-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin: 0.8rem auto 0;
+  }
+  .happy .emotion-dot  { background: var(--happy); }
+  .sad .emotion-dot    { background: var(--sad); }
+  .relax .emotion-dot  { background: var(--relax); }
+  .angry .emotion-dot  { background: var(--angry); }
+
+  /* METHODOLOGY TABLE */
+  .method-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  .method-table th {
+    text-align: left;
+    padding: 0.75rem 1rem;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-muted);
+    border-bottom: 1px solid var(--border-strong);
+    background: var(--cream-dark);
+    font-weight: 500;
+  }
+
+  .method-table td {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--ink-soft);
+    vertical-align: top;
+  }
+
+  .method-table tr:last-child td { border: none; }
+  .method-table tr:hover td { background: var(--gold-pale); }
+
+  .method-table .key { color: var(--ink); font-weight: 500; }
+
+  /* CODE BLOCK */
+  .code-section {
+    background: var(--ink);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .code-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.8rem 1.2rem;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .code-lang {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+
+  .code-dots {
+    display: flex;
+    gap: 5px;
+  }
+  .code-dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+  }
+
+  .code-body {
+    padding: 1.5rem;
+    overflow-x: auto;
+  }
+
+  .code-body pre {
+    color: rgba(255,255,255,0.8);
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    white-space: pre;
+  }
+
+  .code-kw { color: #C792EA; }
+  .code-fn { color: #82AAFF; }
+  .code-str { color: #C3E88D; }
+  .code-cm { color: rgba(255,255,255,0.35); font-style: italic; }
+  .code-num { color: #F78C6C; }
+
+  /* INTERACTIVE DEMO */
+  .demo-area {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .demo-header {
+    padding: 1.2rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  .demo-indicator {
+    width: 8px; height: 8px;
+    background: var(--gold);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .demo-title-text {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink);
+    letter-spacing: 0.03em;
+  }
+
+  .demo-body { padding: 2rem 1.5rem; }
+
+  .upload-zone {
+    border: 1.5px dashed var(--border-strong);
+    border-radius: 4px;
+    padding: 3rem 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+    margin-bottom: 1.5rem;
+  }
+  .upload-zone:hover { background: var(--gold-pale); border-color: var(--gold); }
+
+  .upload-icon { font-size: 2rem; margin-bottom: 0.8rem; color: var(--gold); }
+  .upload-text { font-size: 14px; color: var(--ink-muted); }
+  .upload-text strong { color: var(--ink); font-weight: 500; }
+
+  .or-divider {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 1.2rem 0;
+    color: var(--ink-muted);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .or-divider::before, .or-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-strong);
+  }
+
+  .sample-btns {
+    display: flex;
+    gap: 0.7rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .sample-btn {
+    padding: 0.5rem 1.1rem;
+    border: 1px solid var(--border-strong);
+    background: none;
+    border-radius: 2px;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .sample-btn:hover { background: var(--ink); color: var(--gold-light); border-color: var(--ink); }
+
+  .result-display {
+    display: none;
+    margin-top: 1.5rem;
+    padding: 1.5rem;
+    background: var(--cream-dark);
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+
+  .result-display.show { display: block; }
+
+  .result-emotion {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .result-emoji { font-size: 2.4rem; }
+
+  .result-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-muted);
+    display: block;
+  }
+
+  .result-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem;
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .prob-bars { margin-top: 0.5rem; }
+
+  .prob-row {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 0.5rem;
+    font-size: 13px;
+  }
+
+  .prob-label { width: 60px; color: var(--ink-soft); text-align: right; }
+  .prob-track { flex: 1; height: 5px; background: rgba(0,0,0,0.06); border-radius: 3px; overflow: hidden; }
+  .prob-fill { height: 100%; border-radius: 3px; transition: width 0.8s ease; }
+  .prob-pct { width: 40px; color: var(--ink-muted); font-size: 12px; }
+
+  .prob-fill.happy { background: var(--happy); }
+  .prob-fill.sad   { background: var(--sad); }
+  .prob-fill.relax { background: var(--relax); }
+  .prob-fill.angry { background: var(--angry); }
+
+  /* FOOTER */
+  .footer {
+    background: var(--ink);
+    color: rgba(255,255,255,0.4);
+    text-align: center;
+    padding: 3rem 2rem;
+    font-size: 13px;
+    line-height: 1.8;
+  }
+
+  .footer-title {
+    color: var(--gold-light);
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+
+  .footer-divider {
+    width: 40px;
+    height: 1px;
+    background: rgba(200,151,42,0.3);
+    margin: 1rem auto;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 680px) {
+    .pipeline-grid { grid-template-columns: 1fr; }
+    .results-grid { grid-template-columns: 1fr; }
+    .emotions-grid { grid-template-columns: repeat(2, 1fr); }
+    .section { padding: 3rem 1.2rem; }
+    .hero { padding: 4rem 1.2rem 3rem; }
+    .hero-meta { gap: 1.5rem; }
+  }
+
+  /* Lang visibility */
+  .t-en, .t-ta { display: none; }
+  body.lang-en .t-en { display: revert; }
+  body.lang-ta .t-ta { display: revert; }
+  /* For block elements */
+  span.t-en, span.t-ta { display: none; }
+  body.lang-en span.t-en { display: inline; }
+  body.lang-ta span.t-ta { display: inline; }
+  p.t-en, p.t-ta, div.t-en, div.t-ta,
+  h1.t-en, h1.t-ta, h2.t-en, h2.t-ta,
+  li.t-en, li.t-ta, td.t-en, td.t-ta,
+  th.t-en, th.t-ta { display: none; }
+  body.lang-en p.t-en, body.lang-en div.t-en, body.lang-en h1.t-en, body.lang-en h2.t-en, body.lang-en li.t-en, body.lang-en td.t-en, body.lang-en th.t-en { display: revert; }
+  body.lang-ta p.t-ta, body.lang-ta div.t-ta, body.lang-ta h1.t-ta, body.lang-ta h2.t-ta, body.lang-ta li.t-ta, body.lang-ta td.t-ta, body.lang-ta th.t-ta { display: revert; }
+</style>
+</head>
+<body class="lang-en">
+
+<!-- LANGUAGE BAR -->
+<div class="lang-bar">
+  <span class="lang-note">
+    <span class="t-en">Language</span>
+    <span class="t-ta">மொழி</span>
+  </span>
+  <button class="lang-btn active" onclick="setLang('en')" id="btn-en">English</button>
+  <button class="lang-btn" onclick="setLang('ta')" id="btn-ta">தமிழ்</button>
+</div>
+
+<!-- HERO -->
+<section class="hero" id="top">
+  <div class="hero-pattern"></div>
+
+  <div class="hero-ornament">
+    <div class="ornament-line"></div>
+    <div class="ornament-dot"></div>
+    <div class="ornament-dot" style="opacity:0.4"></div>
+    <div class="ornament-dot"></div>
+    <div class="ornament-line right"></div>
+  </div>
+
+  <div class="hero-tag t-en">Research Paper · Music Information Retrieval</div>
+  <div class="hero-tag t-ta">ஆராய்ச்சிக் கட்டுரை · இசை தகவல் மீட்டெடுப்பு</div>
+
+  <h1 class="t-en">Emotion Recognition in<br><em>Carnatic Music</em></h1>
+  <h1 class="t-ta">கர்நாடக இசையில்<br><em>உணர்வு அடையாளம்</em></h1>
+
+  <p class="hero-sub t-en">A machine learning approach using audio signal features — MFCCs, Chroma, and Spectral Contrast — to classify emotions in Indian art music without altering source audio.</p>
+  <p class="hero-sub t-ta">இந்திய இசையில் உணர்வுகளை வகைப்படுத்த MFCC, Chroma மற்றும் Spectral Contrast பண்புகளைப் பயன்படுத்தும் இயந்திர கற்றல் அணுகுமுறை.</p>
+
+  <div class="hero-meta">
+    <div class="hero-meta-item">
+      <span class="hero-meta-value">39</span>
+      <span class="hero-meta-label t-en">Audio Features</span>
+      <span class="hero-meta-label t-ta">ஒலி பண்புகள்</span>
+    </div>
+    <div class="hero-meta-item">
+      <span class="hero-meta-value">4</span>
+      <span class="hero-meta-label t-en">Emotion Classes</span>
+      <span class="hero-meta-label t-ta">உணர்வு வகைகள்</span>
+    </div>
+    <div class="hero-meta-item">
+      <span class="hero-meta-value">5-Fold</span>
+      <span class="hero-meta-label t-en">Cross-Validation</span>
+      <span class="hero-meta-label t-ta">குறுக்கு சரிபார்ப்பு</span>
+    </div>
+    <div class="hero-meta-item">
+      <span class="hero-meta-value">2</span>
+      <span class="hero-meta-label t-en">Models Compared</span>
+      <span class="hero-meta-label t-ta">மாதிரிகள் ஒப்பிடல்</span>
+    </div>
+  </div>
+</section>
+
+<!-- PAGE NAV -->
+<nav class="page-nav">
+  <a href="#abstract" class="nav-item t-en">Abstract</a>
+  <a href="#abstract" class="nav-item t-ta">சுருக்கம்</a>
+  <a href="#features" class="nav-item t-en">Feature Extraction</a>
+  <a href="#features" class="nav-item t-ta">பண்பு பிரித்தெடுத்தல்</a>
+  <a href="#emotions" class="nav-item t-en">Emotion Classes</a>
+  <a href="#emotions" class="nav-item t-ta">உணர்வு வகைகள்</a>
+  <a href="#results" class="nav-item t-en">Results</a>
+  <a href="#results" class="nav-item t-ta">முடிவுகள்</a>
+  <a href="#methodology" class="nav-item t-en">Methodology</a>
+  <a href="#methodology" class="nav-item t-ta">முறைமை</a>
+  <a href="#demo" class="nav-item t-en">Demo</a>
+  <a href="#demo" class="nav-item t-ta">செயல்விளக்கம்</a>
+</nav>
+
+<!-- ABSTRACT -->
+<section class="section" id="abstract">
+  <div class="section-header">
+    <span class="section-tag t-en">01 — Abstract</span>
+    <span class="section-tag t-ta">01 — சுருக்கம்</span>
+    <div class="section-title t-en serif">Research Overview</div>
+    <div class="section-title t-ta serif">ஆராய்ச்சி கண்ணோட்டம்</div>
+  </div>
+
+  <div class="abstract-card">
+    <p class="t-en">This research presents a novel approach to automatic emotion recognition in Indian Art Music (Carnatic genre). Unlike conventional methods that rely on audio augmentation, this study strictly avoids any alteration of the source audio to preserve the authentic timbral qualities of Carnatic music — including its characteristic gamakas, microtonal ornamentations, and drone-based modal system. Audio signals are processed at a fixed 30-second duration and reduced to a compact 39-dimensional feature vector comprising MFCCs (timbre and gamakas), Chroma STFT (shruti/pitch classes), and Spectral Contrast (separating melody from the tampura drone). Two classifiers — Support Vector Machine (RBF kernel) and Random Forest — are evaluated using 5-fold stratified cross-validation over four emotion categories: Happy, Sad, Relaxed, and Angry.</p>
+    <p class="t-ta">இந்த ஆராய்ச்சி, இந்திய கலை இசையில் (கர்நாடக வகை) தானியங்கி உணர்வு அடையாளத்திற்கான ஒரு புதிய அணுகுமுறையை வழங்குகிறது. வழக்கமான முறைகளைப் போல் ஒலி பெருக்கத்தை நம்பாமல், கர்நாடக இசையின் அசல் தன்மையைப் பாதுகாக்க மூல ஒலியை மாற்றுவதை இந்த ஆய்வு கண்டிப்பாக தவிர்க்கிறது. 39-பரிமாண பண்பு திசையன் கொண்ட MFCC, Chroma STFT, மற்றும் Spectral Contrast மூலம், SVM மற்றும் Random Forest வகைப்படுத்திகள் சந்தோஷம், சோகம், அமைதி, கோபம் என்ற நான்கு உணர்வு வகைகளில் 5-மடல் குறுக்கு சரிபார்ப்பில் மதிப்பீடு செய்யப்படுகின்றன.</p>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="section" id="features">
+  <div class="section-header">
+    <span class="section-tag t-en">02 — Feature Extraction</span>
+    <span class="section-tag t-ta">02 — பண்பு பிரித்தெடுத்தல்</span>
+    <div class="section-title t-en serif">Audio Feature Pipeline</div>
+    <div class="section-title t-ta serif">ஒலி பண்பு குழாய்</div>
+    <p class="section-desc t-en">Three complementary feature sets capture the unique timbral and tonal properties of Carnatic music — totaling 39 dimensions per song.</p>
+    <p class="section-desc t-ta">மூன்று நிரப்பு பண்புத் தொகுப்புகள் கர்நாடக இசையின் தனித்துவமான தன்மைகளை பிடிக்கின்றன — ஒரு பாடலுக்கு 39 பரிமாணங்கள்.</p>
+  </div>
+
+  <div class="pipeline-grid">
+    <div class="pipeline-step">
+      <div class="step-num">01</div>
+      <div class="step-name t-en">MFCCs</div>
+      <div class="step-name t-ta">MFCC பண்புகள்</div>
+      <p class="step-detail t-en">Mel-frequency Cepstral Coefficients capture the timbral texture and micro-tonal ornamentations (gamakas) that define Carnatic phrasing.</p>
+      <p class="step-detail t-ta">Mel-frequency Cepstral Coefficients, கர்நாடக பாணியை வரையறுக்கும் இசையின் அமைப்பு மற்றும் நுண்-ஸ்வர அலங்காரங்களை (காமகங்களை) பிடிக்கின்றன.</p>
+      <span class="step-badge">20 Features</span>
+    </div>
+
+    <div class="pipeline-step">
+      <div class="step-num">02</div>
+      <div class="step-name t-en">Chroma STFT</div>
+      <div class="step-name t-ta">Chroma STFT</div>
+      <p class="step-detail t-en">Chroma features represent the 12 pitch classes in Western nomenclature, aligning with the <em>shruti</em> system of Carnatic ragas for tonal analysis.</p>
+      <p class="step-detail t-ta">Chroma பண்புகள், கர்நாடக ராகங்களின் <em>ஸ்ருதி</em> அமைப்புடன் இசைந்து 12 சுர வகுப்புகளை குறிக்கின்றன.</p>
+      <span class="step-badge">12 Features</span>
+    </div>
+
+    <div class="pipeline-step">
+      <div class="step-num">03</div>
+      <div class="step-name t-en">Spectral Contrast</div>
+      <div class="step-name t-ta">Spectral Contrast</div>
+      <p class="step-detail t-en">Measures the difference between spectral peaks and valleys across sub-bands, effectively separating the melodic line from the <em>tampura</em> drone.</p>
+      <p class="step-detail t-ta">உப-வரிசைகளில் சிகரங்கள் மற்றும் பள்ளத்தாக்குகளுக்கிடையேயான வித்தியாசத்தை அளவிட்டு, மெல்லிசையை <em>தம்புரா</em> நாதத்திலிருந்து பிரிக்கிறது.</p>
+      <span class="step-badge">7 Features</span>
+    </div>
+  </div>
+
+  <div style="margin-top: 1.5rem; padding: 1.2rem 1.5rem; background: var(--gold-pale); border: 1px solid var(--border-strong); border-radius: 4px; display: flex; align-items: center; gap: 1rem;">
+    <div style="color: var(--gold); font-size: 1.2rem; flex-shrink: 0;">♩</div>
+    <p class="t-en" style="font-size: 13.5px; color: var(--ink-soft);">
+      All features are extracted from <strong>strictly 30-second audio segments</strong> with no augmentation — preserving the authentic acoustic character of the recording.
+    </p>
+    <p class="t-ta" style="font-size: 13.5px; color: var(--ink-soft);">
+      அனைத்து பண்புகளும் <strong>கண்டிப்பாக 30-வினாடி ஒலி பகுதிகளிலிருந்து</strong> பிரித்தெடுக்கப்படுகின்றன — எந்த பெருக்கமும் இல்லாமல், ஒலிப்பதிவின் அசல் ஒலியியல் தன்மையை பாதுகாக்கின்றன.
+    </p>
+  </div>
+</section>
+
+<!-- EMOTIONS -->
+<section class="section" id="emotions">
+  <div class="section-header">
+    <span class="section-tag t-en">03 — Emotion Classes</span>
+    <span class="section-tag t-ta">03 — உணர்வு வகைகள்</span>
+    <div class="section-title t-en serif">Four Target Emotions</div>
+    <div class="section-title t-ta serif">நான்கு இலக்கு உணர்வுகள்</div>
+    <p class="section-desc t-en">The model classifies Carnatic compositions into four primary affective states.</p>
+    <p class="section-desc t-ta">மாதிரி கர்நாடக இசைப் படைப்புகளை நான்கு முதன்மை உணர்வு நிலைகளாக வகைப்படுத்துகிறது.</p>
+  </div>
+
+  <div class="emotions-grid">
+    <div class="emotion-card happy">
+      <span class="emotion-icon">😊</span>
+      <div class="emotion-name-en t-en">Happy</div>
+      <div class="emotion-name-ta t-ta">மகிழ்ச்சி</div>
+      <div class="emotion-name-en t-ta" style="font-size:12px; color: var(--ink-muted);">Happy</div>
+      <div class="emotion-dot"></div>
+    </div>
+    <div class="emotion-card sad">
+      <span class="emotion-icon">😢</span>
+      <div class="emotion-name-en t-en">Sad</div>
+      <div class="emotion-name-ta t-ta">சோகம்</div>
+      <div class="emotion-name-en t-ta" style="font-size:12px; color: var(--ink-muted);">Sad</div>
+      <div class="emotion-dot"></div>
+    </div>
+    <div class="emotion-card relax">
+      <span class="emotion-icon">😌</span>
+      <div class="emotion-name-en t-en">Relaxed</div>
+      <div class="emotion-name-ta t-ta">அமைதி</div>
+      <div class="emotion-name-en t-ta" style="font-size:12px; color: var(--ink-muted);">Relaxed</div>
+      <div class="emotion-dot"></div>
+    </div>
+    <div class="emotion-card angry">
+      <span class="emotion-icon">😠</span>
+      <div class="emotion-name-en t-en">Angry</div>
+      <div class="emotion-name-ta t-ta">கோபம்</div>
+      <div class="emotion-name-en t-ta" style="font-size:12px; color: var(--ink-muted);">Angry</div>
+      <div class="emotion-dot"></div>
+    </div>
+  </div>
+</section>
+
+<!-- RESULTS -->
+<section class="section" id="results">
+  <div class="section-header">
+    <span class="section-tag t-en">04 — Results</span>
+    <span class="section-tag t-ta">04 — முடிவுகள்</span>
+    <div class="section-title t-en serif">Model Performance</div>
+    <div class="section-title t-ta serif">மாதிரி செயல்திறன்</div>
+    <p class="section-desc t-en">5-fold stratified cross-validation results across both classifiers on the 80-sample Izmir dataset.</p>
+    <p class="section-desc t-ta">80-மாதிரி Izmir தரவுத்தொகுப்பில் இரு வகைப்படுத்திகளிலும் 5-மடல் குறுக்கு சரிபார்ப்பு முடிவுகள்.</p>
+  </div>
+
+  <div class="results-grid">
+    <!-- SVM -->
+    <div class="model-card">
+      <div class="model-header">
+        <div>
+          <div class="model-name">Support Vector Machine</div>
+          <div class="model-type">RBF Kernel · C=1.0</div>
+        </div>
+      </div>
+      <div class="model-body">
+        <div class="accuracy-display">
+          <span class="accuracy-label t-en">Mean Accuracy (5-Fold CV)</span>
+          <span class="accuracy-label t-ta">சராசரி துல்லியம் (5-மடல்)</span>
+          <div class="accuracy-value" id="svm-acc">—<span>%</span></div>
+          <div class="accuracy-bar-wrap">
+            <div class="accuracy-bar" id="svm-bar" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="model-stats">
+          <div class="stat-row">
+            <span class="stat-key t-en">Kernel</span>
+            <span class="stat-key t-ta">கர்னல்</span>
+            <span class="stat-val">RBF</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-key t-en">Regularization</span>
+            <span class="stat-key t-ta">ஒழுங்குமுறை</span>
+            <span class="stat-val">C = 1.0</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-key t-en">Probability</span>
+            <span class="stat-key t-ta">நிகழ்தகவு</span>
+            <span class="stat-val t-en">Enabled</span>
+            <span class="stat-val t-ta">இயக்கப்பட்டது</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-key t-en">Random State</span>
+            <span class="stat-key t-ta">சீரற்ற நிலை</span>
+            <span class="stat-val">42</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RF -->
+    <div class="model-card">
+      <div class="model-header">
+        <div>
+          <div class="model-name">Random Forest</div>
+          <div class="model-type">n_estimators=100 · max_depth=5</div>
+        </div>
+      </div>
+      <div class="model-body">
+        <div class="accuracy-display">
+          <span class="accuracy-label t-en">Mean Accuracy (5-Fold CV)</span>
+          <span class="accuracy-label t-ta">சராசரி துல்லியம் (5-மடல்)</span>
+          <div class="accuracy-value" id="rf-acc">—<span>%</span></div>
+          <div class="accuracy-bar-wrap">
+            <div class="accuracy-bar" id="rf-bar" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="model-stats">
+          <div class="stat-row">
+            <span class="stat-key t-en">Trees</span>
+            <span class="stat-key t-ta">மரங்கள்</span>
+            <span class="stat-val">100</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-key t-en">Max Depth</span>
+            <span class="stat-key t-ta">அதிகபட்ச ஆழம்</span>
+            <span class="stat-val">5</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-key t-en">Feature Split</span>
+            <span class="stat-key t-ta">பண்பு பிரிவு</span>
+            <span class="stat-val t-en">Auto (√n)</span>
+            <span class="stat-val t-ta">தானியங்கி (√n)</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-key t-en">Random State</span>
+            <span class="stat-key t-ta">சீரற்ற நிலை</span>
+            <span class="stat-val">42</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="padding: 1.2rem 1.5rem; background: #fff; border: 1px solid var(--border); border-radius: 4px; font-size: 13.5px; color: var(--ink-muted);">
+    <strong style="color: var(--ink);" class="t-en">Note on dataset size:</strong>
+    <strong style="color: var(--ink);" class="t-ta">தரவுத்தொகுப்பு அளவு குறிப்பு:</strong>
+    <span class="t-en">The Izmir dataset contains ~20 songs per emotion class (80 total samples). Stratified K-Fold ensures balanced class representation across all folds. Actual cross-validation scores depend on your run environment.</span>
+    <span class="t-ta">Izmir தரவுத்தொகுப்பில் ஒவ்வொரு உணர்வு வகுப்பிற்கும் ~20 பாடல்கள் (மொத்தம் 80 மாதிரிகள்) உள்ளன. Stratified K-Fold அனைத்து மடல்களிலும் சமநிலை வகுப்பு பிரதிநிதித்துவத்தை உறுதிசெய்கிறது.</span>
+  </div>
+</section>
+
+<!-- METHODOLOGY -->
+<section class="section" id="methodology">
+  <div class="section-header">
+    <span class="section-tag t-en">05 — Methodology</span>
+    <span class="section-tag t-ta">05 — முறைமை</span>
+    <div class="section-title t-en serif">Technical Specifications</div>
+    <div class="section-title t-ta serif">தொழில்நுட்ப விவரக்குறிப்புகள்</div>
+  </div>
+
+  <div style="overflow-x:auto; border-radius:4px; border:1px solid var(--border);">
+  <table class="method-table">
+    <thead>
+      <tr>
+        <th class="t-en">Component</th>
+        <th class="t-ta">கூறு</th>
+        <th class="t-en">Detail</th>
+        <th class="t-ta">விவரம்</th>
+        <th class="t-en">Rationale</th>
+        <th class="t-ta">காரணம்</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="key t-en">Audio Loading</td>
+        <td class="key t-ta">ஒலி ஏற்றுதல்</td>
+        <td class="t-en">librosa, 30s fixed</td>
+        <td class="t-ta">librosa, 30 வினாடி</td>
+        <td class="t-en">Consistent feature dimensions across all samples</td>
+        <td class="t-ta">அனைத்து மாதிரிகளிலும் சீரான பண்பு பரிமாணங்கள்</td>
+      </tr>
+      <tr>
+        <td class="key t-en">MFCCs</td>
+        <td class="key t-ta">MFCC</td>
+        <td class="t-en">n_mfcc=20, mean pooling</td>
+        <td class="t-ta">n_mfcc=20, சராசரி குளியல்</td>
+        <td class="t-en">Captures timbral envelope and gamakas</td>
+        <td class="t-ta">தன்மை மடிகளை மற்றும் காமகங்களை பிடிக்கிறது</td>
+      </tr>
+      <tr>
+        <td class="key t-en">Chroma STFT</td>
+        <td class="key t-ta">Chroma STFT</td>
+        <td class="t-en">12 pitch classes, mean pooling</td>
+        <td class="t-ta">12 சுர வகுப்புகள், சராசரி குளியல்</td>
+        <td class="t-en">Maps to shruti/raga tonal structure</td>
+        <td class="t-ta">ஸ்ருதி/ராக ஒலியியல் கட்டமைப்பை வரைபடமாக்குகிறது</td>
+      </tr>
+      <tr>
+        <td class="key t-en">Spectral Contrast</td>
+        <td class="key t-ta">Spectral Contrast</td>
+        <td class="t-en">7 sub-bands, mean pooling</td>
+        <td class="t-ta">7 உப-வரிசைகள், சராசரி குளியல்</td>
+        <td class="t-en">Isolates melody from tampura drone</td>
+        <td class="t-ta">தம்புரா நாதத்திலிருந்து மெல்லிசையை தனிமைப்படுத்துகிறது</td>
+      </tr>
+      <tr>
+        <td class="key t-en">Scaling</td>
+        <td class="key t-ta">அளவிடல்</td>
+        <td class="t-en">StandardScaler (z-score)</td>
+        <td class="t-ta">StandardScaler (z-மதிப்பீடு)</td>
+        <td class="t-en">Normalizes feature magnitudes for SVM convergence</td>
+        <td class="t-ta">SVM ஒருங்கிணைப்பிற்கு பண்பு அளவுகளை சீராக்குகிறது</td>
+      </tr>
+      <tr>
+        <td class="key t-en">Validation</td>
+        <td class="key t-ta">சரிபார்ப்பு</td>
+        <td class="t-en">StratifiedKFold (n=5)</td>
+        <td class="t-ta">StratifiedKFold (n=5)</td>
+        <td class="t-en">Ensures balanced class distribution per fold (80 samples)</td>
+        <td class="t-ta">ஒவ்வொரு மடலிலும் சமநிலை வகுப்பு விநியோகத்தை உறுதிசெய்கிறது</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <!-- Code snippet -->
+  <div style="margin-top: 2rem;">
+    <p style="font-size: 13px; color: var(--ink-muted); margin-bottom: 0.8rem; letter-spacing: 0.04em; text-transform: uppercase;">
+      <span class="t-en">Core feature extraction function</span>
+      <span class="t-ta">முக்கிய பண்பு பிரித்தெடுப்பு செயல்பாடு</span>
+    </p>
+    <div class="code-section">
+      <div class="code-header">
+        <span class="code-lang">Python · librosa</span>
+        <div class="code-dots">
+          <div class="code-dot"></div>
+          <div class="code-dot"></div>
+          <div class="code-dot"></div>
+        </div>
+      </div>
+      <div class="code-body">
+<pre><span class="code-kw">def</span> <span class="code-fn">extract_carnatic_features</span>(file_path):
+    <span class="code-cm"># Load audio — strictly 30 seconds, no alteration</span>
+    y, sr = librosa.load(file_path, duration=<span class="code-num">30</span>)
+
+    <span class="code-cm"># 1. MFCCs — Timbre &amp; Gamakas (20 features)</span>
+    mfccs      = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=<span class="code-num">20</span>)
+    mfccs_mean = np.mean(mfccs.T, axis=<span class="code-num">0</span>)
+
+    <span class="code-cm"># 2. Chroma STFT — Pitch Classes / Shruti (12 features)</span>
+    chroma      = librosa.feature.chroma_stft(y=y, sr=sr)
+    chroma_mean = np.mean(chroma.T, axis=<span class="code-num">0</span>)
+
+    <span class="code-cm"># 3. Spectral Contrast — Melody vs Drone (7 features)</span>
+    contrast      = librosa.feature.spectral_contrast(y=y, sr=sr)
+    contrast_mean = np.mean(contrast.T, axis=<span class="code-num">0</span>)
+
+    <span class="code-cm"># Stack → 39-dimensional feature vector</span>
+    <span class="code-kw">return</span> np.hstack([mfccs_mean, chroma_mean, contrast_mean])</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DEMO -->
+<section class="section" id="demo">
+  <div class="section-header">
+    <span class="section-tag t-en">06 — Interactive Demo</span>
+    <span class="section-tag t-ta">06 — செயல்விளக்கம்</span>
+    <div class="section-title t-en serif">Try the Classifier</div>
+    <div class="section-title t-ta serif">வகைப்படுத்தியை முயற்சிக்கவும்</div>
+    <p class="section-desc t-en">Simulate how the model would classify an audio file. Select a sample below or upload your own Carnatic audio.</p>
+    <p class="section-desc t-ta">மாதிரி ஒரு ஒலி கோப்பை எவ்வாறு வகைப்படுத்தும் என்பதை உருவகப்படுத்துங்கள். கீழே ஒரு மாதிரியைத் தேர்ந்தெடுக்கவும் அல்லது உங்கள் சொந்த கர்நாடக ஒலியை பதிவேற்றவும்.</p>
+  </div>
+
+  <section class="section" id="demo">
+  <div class="demo-area">
+    <div class="demo-header">
+      <div class="demo-indicator"></div>
+      <span class="demo-title-text t-en">Emotion Prediction Simulator</span>
+      <span class="demo-title-text t-ta">உணர்வு கணிப்பு உருவகப்படுத்துதல்</span>
+    </div>
+    <div class="demo-body">
+
+      <input type="file" id="real-audio-upload" style="display: none;" accept=".wav,.mp3">
+
+      <div class="upload-zone" onclick="document.getElementById('real-audio-upload').click()">
+        <div class="upload-icon">♪</div>
+        <p class="upload-text t-en"><strong>Click to upload</strong> a .wav or .mp3 file<br><span style="font-size:12px;">30 seconds will be analyzed</span></p>
+        <p class="upload-text t-ta"><strong>பதிவேற்ற கிளிக் செய்யவும்</strong> .wav அல்லது .mp3 கோப்பை<br><span style="font-size:12px;">30 வினாடிகள் பகுப்பாய்வு செய்யப்படும்</span></p>
+      </div>
+
+      <div class="or-divider t-en">or try a sample</div>
+      <div class="or-divider t-ta">அல்லது ஒரு மாதிரியை முயற்சிக்கவும்</div>
+
+      <div class="sample-btns">
+        <button class="sample-btn" onclick="simulateAnalysis('happy')">
+          <span class="t-en">😊 Happy Raga</span>
+          <span class="t-ta">😊 மகிழ்ச்சி ராகம்</span>
+        </button>
+        <button class="sample-btn" onclick="simulateAnalysis('sad')">
+          <span class="t-en">😢 Sad Raga</span>
+          <span class="t-ta">😢 சோக ராகம்</span>
+        </button>
+        <button class="sample-btn" onclick="simulateAnalysis('relax')">
+          <span class="t-en">😌 Bhairavi (Relax)</span>
+          <span class="t-ta">😌 பைரவி (அமைதி)</span>
+        </button>
+        <button class="sample-btn" onclick="simulateAnalysis('angry')">
+          <span class="t-en">😠 Angry Raga</span>
+          <span class="t-ta">😠 கோப ராகம்</span>
+        </button>
+      </div>
+
+      <div id="result-box" class="result-display">
+        <div id="analyzing-msg" style="text-align:center; padding: 1rem; color: var(--ink-muted); font-size: 14px;">
+          <span class="t-en">Extracting 39 audio features…</span>
+          <span class="t-ta">39 ஒலி பண்புகளை பிரித்தெடுக்கிறது…</span>
+        </div>
+        <div id="result-content" style="display:none;">
+          <div class="result-emotion">
+            <span class="result-emoji" id="result-emoji">😊</span>
+            <div>
+              <span class="result-label t-en">Predicted Emotion</span>
+              <span class="result-label t-ta">கணிக்கப்பட்ட உணர்வு</span>
+              <div class="result-name" id="result-name">Happy</div>
+            </div>
+          </div>
+
+          <div>
+            <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-muted); margin-bottom: 0.6rem;">
+              <span class="t-en">Class Probabilities</span>
+              <span class="t-ta">வகுப்பு நிகழ்தகவுகள்</span>
+            </p>
+            <div class="prob-bars" id="prob-bars"></div>
+          </div>
+
+          <div style="margin-top: 1.2rem; padding: 0.8rem 1rem; background: rgba(200,151,42,0.06); border-left: 2px solid var(--gold); border-radius: 2px; font-size: 13px; color: var(--ink-muted);">
+            <span class="t-en">Model: SVM (RBF kernel) · Features: MFCC + Chroma + Spectral Contrast · Scaled: StandardScaler</span>
+            <span class="t-ta">மாதிரி: SVM (RBF kernel) · பண்புகள்: MFCC + Chroma + Spectral Contrast · அளவிடல்: StandardScaler</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-title t-en">Carnatic Music Emotion Recognition</div>
+  <div class="footer-title t-ta">கர்நாடக இசை உணர்வு அடையாளம்</div>
+  <div class="footer-divider"></div>
+  <p class="t-en">Built with librosa · scikit-learn · Python<br>Features: 39-dimensional vector · Validation: 5-Fold Stratified CV</p>
+  <p class="t-ta">librosa · scikit-learn · Python மூலம் கட்டமைக்கப்பட்டது<br>பண்புகள்: 39-பரிமாண திசையன் · சரிபார்ப்பு: 5-மடல் Stratified CV</p>
+</footer>
+
+<script>
+  function setLang(lang) {
+    document.body.className = 'lang-' + lang;
+    document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+    document.getElementById('btn-ta').classList.toggle('active', lang === 'ta');
+  }
+
+  // Animate accuracy bars on load
+  window.addEventListener('load', function() {
+    setTimeout(function() {
+      // Placeholder values — update with your actual CV results
+      var svmAcc = 76.25;
+      var rfAcc  = 75.00;
+      document.getElementById('svm-acc').innerHTML = svmAcc.toFixed(1) + '<span>%</span>';
+      document.getElementById('rf-acc').innerHTML  = rfAcc.toFixed(1)  + '<span>%</span>';
+      document.getElementById('svm-bar').style.width = svmAcc + '%';
+      document.getElementById('rf-bar').style.width  = rfAcc  + '%';
+    }, 400);
+  });
+
+  var sampleData = {
+    happy:  { emoji: '😊', en: 'Happy',   ta: 'மகிழ்ச்சி', probs: { happy: 0.72, sad: 0.08, relax: 0.14, angry: 0.06 } },
+    sad:    { emoji: '😢', en: 'Sad',     ta: 'சோகம்',      probs: { happy: 0.07, sad: 0.69, relax: 0.18, angry: 0.06 } },
+    relax:  { emoji: '😌', en: 'Relaxed', ta: 'அமைதி',      probs: { happy: 0.11, sad: 0.09, relax: 0.74, angry: 0.06 } },
+    angry:  { emoji: '😠', en: 'Angry',   ta: 'கோபம்',      probs: { happy: 0.05, sad: 0.10, relax: 0.08, angry: 0.77 } },
+    upload: { emoji: '🎵', en: 'Analyzing…', ta: 'பகுப்பாய்வு…', probs: { happy: 0.38, sad: 0.22, relax: 0.28, angry: 0.12 } }
+  };
+
+  var emotionLabels = {
+    happy:  { en: 'Happy',   ta: 'மகிழ்ச்சி' },
+    sad:    { en: 'Sad',     ta: 'சோகம்' },
+    relax:  { en: 'Relaxed', ta: 'அமைதி' },
+    angry:  { en: 'Angry',   ta: 'கோபம்' }
+  };
+
+  document.getElementById('real-audio-upload').addEventListener('change', function(e) {
+    var file = e.target.files[0];
+    if (!file) return;
+
+    var box = document.getElementById('result-box');
+    var analyzing = document.getElementById('analyzing-msg');
+    var content = document.getElementById('result-content');
+
+    // Show loading state
+    box.classList.add('show');
+    analyzing.style.display = 'block';
+    content.style.display = 'none';
+
+    var formData = new FormData();
+    formData.append('audio', file);
+
+    // Send file to Flask /predict endpoint
+    fetch('/predict', {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.error) {
+        alert("Error: " + data.error);
+        box.classList.remove('show');
+        return;
+      }
+
+      var isTa = document.body.classList.contains('lang-ta');
+      var emKeys = ['happy','sad','relax','angry'];
+      var predictedKey = data.emotion;
+      
+      // Map to your existing emojis
+      var emojis = { 'happy': '😊', 'sad': '😢', 'relax': '😌', 'angry': '😠' };
+
+      document.getElementById('result-emoji').textContent = emojis[predictedKey];
+      document.getElementById('result-name').textContent = isTa ? emotionLabels[predictedKey].ta : emotionLabels[predictedKey].en;
+
+      // Build probability bars dynamically using Python results
+      var barsHtml = '';
+      emKeys.forEach(function(em) {
+        var probValue = data.probs[em] || 0;
+        var pct = (probValue * 100).toFixed(1);
+        var lab = isTa ? emotionLabels[em].ta : emotionLabels[em].en;
+        barsHtml += '<div class="prob-row">'
+          + '<span class="prob-label">' + lab + '</span>'
+          + '<div class="prob-track"><div class="prob-fill ' + em + '" style="width:0%" data-pct="' + pct + '"></div></div>'
+          + '<span class="prob-pct">' + pct + '%</span>'
+          + '</div>';
+      });
+      document.getElementById('prob-bars').innerHTML = barsHtml;
+
+      analyzing.style.display = 'none';
+      content.style.display = 'block';
+
+      // Animate bars
+      setTimeout(function() {
+        document.querySelectorAll('.prob-fill').forEach(function(el) {
+          el.style.width = el.getAttribute('data-pct') + '%';
+        });
+      }, 50);
+    })
+    .catch(err => {
+      console.error(err);
+      alert("Failed to connect to server.");
+      box.classList.remove('show');
+    });
+  });
+
+  function simulateAnalysis(type) {
+    var box = document.getElementById('result-box');
+    var analyzing = document.getElementById('analyzing-msg');
+    var content = document.getElementById('result-content');
+
+    box.classList.add('show');
+    analyzing.style.display = 'block';
+    content.style.display = 'none';
+
+    setTimeout(function() {
+      var data = sampleData[type] || sampleData.happy;
+      var isTa = document.body.classList.contains('lang-ta');
+
+      document.getElementById('result-emoji').textContent = data.emoji;
+      document.getElementById('result-name').textContent  = isTa ? data.ta : data.en;
+
+      var barsHtml = '';
+      var emotions = ['happy','sad','relax','angry'];
+      emotions.forEach(function(em) {
+        var pct = (data.probs[em] * 100).toFixed(1);
+        var lab = isTa ? emotionLabels[em].ta : emotionLabels[em].en;
+        barsHtml += '<div class="prob-row">'
+          + '<span class="prob-label">' + lab + '</span>'
+          + '<div class="prob-track"><div class="prob-fill ' + em + '" style="width:0%" data-pct="' + pct + '"></div></div>'
+          + '<span class="prob-pct">' + pct + '%</span>'
+          + '</div>';
+      });
+      document.getElementById('prob-bars').innerHTML = barsHtml;
+
+      analyzing.style.display = 'none';
+      content.style.display = 'block';
+
+      // Animate bars
+      setTimeout(function() {
+        document.querySelectorAll('.prob-fill').forEach(function(el) {
+          el.style.width = el.getAttribute('data-pct') + '%';
+        });
+      }, 50);
+    }, 1200);
+  }
+</script>
+
+</body>
+</html>
